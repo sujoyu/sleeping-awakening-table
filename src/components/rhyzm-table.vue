@@ -95,13 +95,9 @@ export default {
   watch: {
     mode(val) {
       if (this.mode === 'none') {
-        // $(this.$el).find('.hours').removeClass('blink')
-        this.timepicker && this.timepicker.destroy()
       } else if (this.mode === 'medicine') {
-        // $(this.$el).find('.hours').addClass('blink')
         this.initSlider(0.5)
       } else {
-        // $(this.$el).find('.hours').addClass('blink')
         this.initSlider(1)
       }
     },
@@ -128,9 +124,14 @@ export default {
       }
     },
     onSelectHours(row) {
-      this.currentRow = row//Object.assign({}, this.currentRow, row)
+      this.currentRow = row
 
       if (this.mode === 'none') {
+        this.actionButton.destroy()
+        let elem = document.querySelector('.fixed-action-btn');
+        this.actionButton = M.FloatingActionButton.init(elem, {
+          hoverEnabled: false
+        });
         this.actionButton.open()
       } else {
         this.sliderModal.open()
