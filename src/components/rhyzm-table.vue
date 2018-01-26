@@ -15,32 +15,8 @@
     </div>
     <div class="rhyzm-table">
         <transition-group name="rows" tag="ul">
-          <li v-for="row in rows" v-bind:key="+row.date" class="one-row">
-            <div class="row-items">
-              <div class="row-item date">{{ row.date.format('M/D (dd)') }}</div>
-              <div class="row-item condition">
-                <div class="input-field">
-                <select @change="onSelectChange($event)" v-model="row.condition">
-                  <option value="" disabled selected>気分</option>
-                  <option value="2"> 絶好調</option>
-                  <option value="1"> 好調</option>
-                  <option value="0"> 普通</option>
-                  <option value="-1"> 少し悪い</option>
-                  <option value="-2"> ひどく悪い</option>
-                </select>
-                </div>
-              </div>
-              <div class="row-item comment">
-                <div class="input-field">
-                  <input placeholder="日常行動" v-model="row.comment">
-                </div>
-              </div>
-            </div>
-            <div class="hours" @click="selectHours(row)" :class="{ blink: currentRow === row }">
-              <div v-for="h in hours" class="hour white-text" :class="hourClass(row, h)">
-                {{ h - 1 }}
-              </div>
-            </div>
+          <li v-for="row in rows" :key="+row.date" class="one-row">
+            <rhyzm-table-row :row="row" :currentRow="currentRow" :modes="modes" :mode="mode" @selectHours="onSelectHours"></rhyzm-table-row>
           </li>
         </transition-group>
         <!-- <infinite-loading @infinite="infiniteHandler"></infinite-loading> -->
@@ -55,7 +31,7 @@
         <div id="timeSlider"></div>
       </div>
       <div class="modal-footer">
-        <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" @click="mode = 'none'">キャンセル</a>
+        <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" @click="mode = 'none'; currentRow = null">キャンセル</a>
         <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" @click="onCompleteSelectHours">決定</a>
       </div>
     </div>
@@ -69,19 +45,20 @@ import M from 'materialize-css'
 import noUiSlider from 'nouislider'
 import $ from 'jquery'
 
+import RhyzmTableRow from './rhyzm-table-row'
+
 moment.locale('ja');
 
 export default {
   data() {
     return {
       rows: [],
-      hours: 24,
       mode: 'none',
       timepicker: null,
       timeslider: null,
       sliderModal: null,
       actionButton: null,
-      currentRow: null,
+      currentRow: {},
       modes: ['medicine', 'deep', 'shallow', 'lie', 'out'].reverse()
     }
   },
@@ -102,21 +79,22 @@ export default {
       this.onLoad()
     })
   },
-  updated: function () {
-    this.$nextTick(function () {
-      this.updateSelects()
-    })
+  updated() {
+  },
+  components: {
+    RhyzmTableRow,
+    InfiniteLoading,
   },
   watch: {
     mode(val) {
       if (this.mode === 'none') {
-        $(this.$el).find('.hours').removeClass('blink')
+        // $(this.$el).find('.hours').removeClass('blink')
         this.timepicker && this.timepicker.destroy()
       } else if (this.mode === 'medicine') {
-        $(this.$el).find('.hours').addClass('blink')
+        // $(this.$el).find('.hours').addClass('blink')
         this.initSlider(0.5)
       } else {
-        $(this.$el).find('.hours').addClass('blink')
+        // $(this.$el).find('.hours').addClass('blink')
         this.initSlider(1)
       }
     },
@@ -130,7 +108,6 @@ export default {
         }
       })
       localStorage.setItem('dates', JSON.stringify(dates))
-      console.log(dates)
     },
     onLoad() {
       const dates = JSON.parse(localStorage.getItem('dates')) || {}
@@ -139,52 +116,18 @@ export default {
         const date = dates[+row.date]
         if (date) {
           date.date = moment(date.date)
-          this.rows[i] = dates[+row.date]
+          this.$set(this.rows, i, dates[+row.date])
         }
       }
-
-      // .hour の class 再計算のため
-      this.mode = 'a'
-      this.mode = 'none'
     },
-    hourClass(row, h) {
-      const modeClass = {
-        out: {
-          'purple': true,
-        },
-        lie: {
-          'yellow': true,
-          'darken-2': true
-        },
-        shallow: {
-          'blue': true
-        },
-        deep: {
-          'green': true
-        },
-        medicine: {
-          'red': true
-        },
-      }
+    onSelectHours(row) {
+      this.currentRow = row//Object.assign({}, this.currentRow, row)
 
-      let current = {
-        'grey': true,
-        'lighten-2': true,
+      if (this.mode === 'none') {
+        this.actionButton.open()
+      } else {
+        this.sliderModal.open()
       }
-      this.modes.forEach((mode) => {
-        row[mode] && row[mode].forEach((hours) => {
-          if ((hours[1] === undefined && hours[0] < h && h <= hours[0] + 1)
-            || (hours[1] !== undefined && hours[0] < h && h <= hours[1])) {
-            current = modeClass[mode]
-          }
-        })
-      })
-
-      if (h - 1 < 10) {
-        current['twice-hour'] = true
-      }
-
-      return current
     },
     initSlider(count) {
       this.timeslider.noUiSlider && this.timeslider.noUiSlider.destroy()
@@ -242,18 +185,9 @@ export default {
         this.initSlider(count - 1)
       }
     },
-    selectHours(row) {
-      this.currentRow = row
-
-      if (this.mode === 'none') {
-        this.actionButton.open()
-      } else {
-        this.sliderModal.open()
-      }
-    },
     onCompleteSelectHours() {
       const val = this.timeslider.noUiSlider.get()
-      this.currentRow[this.mode] = []
+      this.$set(this.currentRow, this.mode, [])
       if (typeof val === 'number') {
         this.currentRow[this.mode].push([val])
       } else {
@@ -261,6 +195,7 @@ export default {
           this.currentRow[this.mode].push([val.shift(), val.shift()])
         }
       }
+
       this.mode = 'none'
       this.currentRow = null
     },
@@ -284,23 +219,6 @@ export default {
         out: '外出していた'
       }
       return names[this.mode]
-    },
-    updateSelects() {
-      const elem = document.querySelectorAll('select')
-      const instance = M.Select.init(elem, {})
-    },
-    onSelectChange(event) {
-      const $target = $(event.currentTarget)
-      const val = $target.val()
-      const dropdown = $target.parents('.input-field')
-      const colors = {
-        '2': 'orange',
-        '1': 'lime',
-        '0': 'green',
-        '-1': 'cyan',
-        '-2': 'blue'
-      }
-      dropdown.removeClass().addClass("input-field lighten-4").addClass(colors[val])
     },
     load30days(date) {
       date = date.startOf('day')
@@ -332,9 +250,6 @@ export default {
         }
       }, 300)
     },
-  },
-  components: {
-    InfiniteLoading,
   },
 }
 </script>
