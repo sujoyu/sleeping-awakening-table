@@ -1,6 +1,7 @@
 import 'materialize-css/dist/css/materialize.css'
 // import M from 'materialize-css/dist/js/materialize'
-import 'materialize-css/extras/noUiSlider/nouislider.css'
+import 'noUiSlider/distribute/nouislider.css'
+// import 'materialize-css/extras/noUiSlider/nouislider.css'
 // import noUiSlider from 'materialize-css/extras/noUiSlider/nouislider'
 
 import 'sass/app.scss'

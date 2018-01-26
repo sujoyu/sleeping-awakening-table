@@ -2,7 +2,7 @@
 <div>
   <nav class="light-blue lighten-1" role="navigation">
     <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">
-      <i class="material-icons">brightness_2</i> ねておきて <i class="material-icons">wb_sunny</i>
+      <i class="material-icons left-logo">brightness_2</i>ねておきて<i class="material-icons">wb_sunny</i>
     </a>
 
       <ul id="slide-out" class="sidenav">
@@ -93,13 +93,13 @@
   nav .brand-logo {
     font-family: "Hannari";
     font-weight: bolder;
-    letter-spacing: -0.2em;
+    letter-spacing: -0.25em;
 
     i.material-icons {
       vertical-align: -2;
       display: inline-block;
       float: none;
-      margin-right: 0;
+      margin-right: -3px;
     }
   }
 </style>

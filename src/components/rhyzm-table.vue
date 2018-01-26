@@ -36,7 +36,7 @@
                 </div>
               </div>
             </div>
-            <div class="hours" @click="selectHours(row)">
+            <div class="hours" @click="selectHours(row)" :class="{ blink: currentRow === row }">
               <div v-for="h in hours" class="hour white-text" :class="hourClass(row, h)">
                 {{ h - 1 }}
               </div>
@@ -45,7 +45,7 @@
         </transition-group>
         <!-- <infinite-loading @infinite="infiniteHandler"></infinite-loading> -->
     </div>
-    <div class="modal bottom-sheet" id="sliderModal">
+    <div class="modal" id="sliderModal">
       <div class="modal-content">
         <h4>時間帯選択</h4>
         <p>{{ showMode() }}時間帯を選択してください。<br>
@@ -66,7 +66,7 @@
 import moment from 'moment'
 import InfiniteLoading from 'vue-infinite-loading'
 import M from 'materialize-css'
-import noUiSlider from 'materialize-css/extras/noUiSlider/nouislider'
+import noUiSlider from 'nouislider'
 import $ from 'jquery'
 
 moment.locale('ja');
@@ -89,7 +89,9 @@ export default {
     this.rows = this.load30days(moment())
     this.$nextTick(function () {
       let elem = document.querySelector('.fixed-action-btn');
-      this.actionButton = M.FloatingActionButton.init(elem, {});
+      this.actionButton = M.FloatingActionButton.init(elem, {
+        hoverEnabled: false
+      });
 
       elem = document.getElementById('sliderModal');
       this.sliderModal = M.Modal.init(elem, {});
@@ -207,7 +209,8 @@ export default {
        start: start,
        connect: connect,
        step: 1,
-       behaviour: "tap",
+       // behaviour: 'tap',
+       tooltips: true,
        orientation: 'horizontal', // 'horizontal' or 'vertical'
        range: {
          'min': 0,
@@ -242,7 +245,9 @@ export default {
     selectHours(row) {
       this.currentRow = row
 
-      if (this.mode !== 'none') {
+      if (this.mode === 'none') {
+        this.actionButton.open()
+      } else {
         this.sliderModal.open()
       }
     },
@@ -257,10 +262,18 @@ export default {
         }
       }
       this.mode = 'none'
+      this.currentRow = null
     },
     intoEditMode(mode) {
       this.mode = mode
-      this.actionButton.close()
+      if (mode === 'none') {
+        this.currentRow = null
+      } else {
+        this.actionButton.close()
+        if (this.currentRow) {
+          this.sliderModal.open()
+        }
+      }
     },
     showMode() {
       const names = {
@@ -394,7 +407,7 @@ export default {
     display: none;
   }
   #timeSlider {
-    margin-top: 2rem;
+    margin-top: 4rem;
     margin-bottom: 1rem;
   }
 </style>
