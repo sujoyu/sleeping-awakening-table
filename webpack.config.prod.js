@@ -1,4 +1,5 @@
-
+var webpack = require('webpack')
+const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
 
 module.exports = {
     entry: './src/app.js',
@@ -55,21 +56,19 @@ module.exports = {
             }
         ]
     },
-
-    devtool: 'cheap-module-eval-source-map',
-    devServer: {
-        clientLogLevel: 'warning',
-        contentBase: __dirname, // since we use CopyWebpackPlugin.
-        compress: true,
-        host: 'localhost',
-        port: '8080',
-        open: false,
-        overlay: { warnings: false, errors: true },
-        publicPath:'/',
-        quiet: true, // necessary for FriendlyErrorsPlugin
-        watchOptions: {
-          poll: false,
+    plugins: [
+    new webpack.DefinePlugin({
+      'process.env': {
+        NODE_ENV: '"production"'
+      }
+    }),
+    new UglifyJsPlugin({
+      uglifyOptions: {
+        compress: {
+          warnings: false
         }
-    },
-
+      },
+      parallel: true
+    }),
+  ]
 };

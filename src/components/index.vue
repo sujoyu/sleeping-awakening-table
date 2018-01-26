@@ -4,23 +4,19 @@
     <div class="nav-wrapper container"><a id="logo-container" href="#" class="brand-logo">
       <i class="material-icons">brightness_2</i> ねておきて <i class="material-icons">wb_sunny</i>
     </a>
-      <ul class="right hide-on-med-and-down">
-        <li><a href="#">Navbar Link</a></li>
-      </ul>
 
-      <ul id="nav-mobile" class="side-nav" style="transform: translateX(-100%);">
-        <li><a href="#">Navbar Link</a></li>
+      <ul id="slide-out" class="sidenav">
+        <li><a href="#!" @click="onSave"><i class="material-icons">save</i>ブラウザに保存</a></li>
+        <li><a href="#!" @click="onLoad"><i class="material-icons">unarchive</i>ブラウザから復元</a></li>
       </ul>
-      <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+      <a href="#" data-target="slide-out" class="sidenav-trigger"><i class="material-icons">menu</i></a>
     </div>
   </nav>
 
   <div class="container">
     <div class="section">
       <div class="row">
-        <!-- <div class="col l12"> -->
-          <rhyzm-table></rhyzm-table>
-        <!-- </div> -->
+          <rhyzm-table ref="mainTable"></rhyzm-table>
       </div>
     </div>
   </div>
@@ -64,12 +60,28 @@
   export default {
     data() {
       return {
-
+        sidenav: null,
       }
+    },
+    mounted() {
+      this.$nextTick(function () {
+        let elem = document.querySelector('.sidenav');
+        this.sidenav = M.Sidenav.init(elem, {});
+      })
     },
     components: {
       RhyzmTable
-    }
+    },
+    methods: {
+      onSave() {
+        this.$refs.mainTable.onSave()
+        this.sidenav.close()
+      },
+      onLoad() {
+        this.$refs.mainTable.onLoad()
+        this.sidenav.close()
+      }
+    },
   }
 </script>
 

@@ -5,12 +5,12 @@
         <i class="large material-icons">mode_edit</i>
       </a>
       <ul>
-        <li><a class="btn-floating purple" @click="intoEditMode('out')">外</a></li>
-        <li><a class="btn-floating yellow darken-2" @click="intoEditMode('lie')">床</a></li>
-        <li><a class="btn-floating blue" @click="intoEditMode('shallow')">浅</a></li>
-        <li><a class="btn-floating green" @click="intoEditMode('deep')">深</a></li>
-        <li><a class="btn-floating red" @click="intoEditMode('medicine')">薬</a></li>
-        <li><a class="btn-floating blue" @click="intoEditMode('none')">無</a></li>
+        <li><a class="btn-floating waves-effect waves-light purple" @click="intoEditMode('out')">外</a></li>
+        <li><a class="btn-floating waves-effect waves-light yellow darken-2" @click="intoEditMode('lie')">床</a></li>
+        <li><a class="btn-floating waves-effect waves-light blue" @click="intoEditMode('shallow')">浅</a></li>
+        <li><a class="btn-floating waves-effect waves-light green" @click="intoEditMode('deep')">深</a></li>
+        <li><a class="btn-floating waves-effect waves-light red" @click="intoEditMode('medicine')">薬</a></li>
+        <li><a class="btn-floating waves-effect waves-light gray" @click="intoEditMode('none')">戻</a></li>
       </ul>
     </div>
     <div class="rhyzm-table">
@@ -45,13 +45,12 @@
         </transition-group>
         <!-- <infinite-loading @infinite="infiniteHandler"></infinite-loading> -->
     </div>
-    <input type="text" class="hidden timepicker" id="timePicker">
-    <div class="modal" id="sliderModal">
+    <div class="modal bottom-sheet" id="sliderModal">
       <div class="modal-content">
         <h4>時間帯選択</h4>
         <p>{{ showMode() }}時間帯を選択してください。<br>
-          <a class="waves-effect waves-light btn" @click="addSlider">時間帯を追加</a><br>
-          <a class="waves-effect waves-light btn" @click="removeSlider">時間帯を削除</a>
+          <a v-if="mode !== 'medicine'" class="waves-effect waves-light btn" @click="addSlider">時間帯を追加</a><br>
+          <a v-if="mode !== 'medicine'" class="waves-effect waves-light btn orange" @click="removeSlider">時間帯を削除</a>
         </p>
         <div id="timeSlider"></div>
       </div>
@@ -81,6 +80,7 @@ export default {
       timepicker: null,
       timeslider: null,
       sliderModal: null,
+      actionButton: null,
       currentRow: null,
       modes: ['medicine', 'deep', 'shallow', 'lie', 'out'].reverse()
     }
@@ -89,13 +89,15 @@ export default {
     this.rows = this.load30days(moment())
     this.$nextTick(function () {
       let elem = document.querySelector('.fixed-action-btn');
-      M.FloatingActionButton.init(elem, {});
+      this.actionButton = M.FloatingActionButton.init(elem, {});
 
       elem = document.getElementById('sliderModal');
       this.sliderModal = M.Modal.init(elem, {});
 
       this.timeslider = document.getElementById('timeSlider');
       this.initSlider(1)
+
+      this.onLoad()
     })
   },
   updated: function () {
@@ -105,19 +107,12 @@ export default {
   },
   watch: {
     mode(val) {
-      console.log(this.mode)
       if (this.mode === 'none') {
         $(this.$el).find('.hours').removeClass('blink')
         this.timepicker && this.timepicker.destroy()
       } else if (this.mode === 'medicine') {
         $(this.$el).find('.hours').addClass('blink')
-        const elem = document.getElementById('timePicker')
-        this.timepicker = M.Timepicker.init(elem, {
-          onSelect(time) {
-            console.log(time)
-          },
-          twelveHour: false,
-        })
+        this.initSlider(0.5)
       } else {
         $(this.$el).find('.hours').addClass('blink')
         this.initSlider(1)
@@ -125,6 +120,31 @@ export default {
     },
   },
   methods: {
+    onSave() {
+      const dates = {}
+      this.rows.forEach((row) => {
+        if (Object.keys(row).length > 1) {
+          dates[+row.date] = row
+        }
+      })
+      localStorage.setItem('dates', JSON.stringify(dates))
+      console.log(dates)
+    },
+    onLoad() {
+      const dates = JSON.parse(localStorage.getItem('dates'))
+      for (let i = 0; i < this.rows.length; i++) {
+        const row = this.rows[i]
+        const date = dates[+row.date]
+        if (date) {
+          date.date = moment(date.date)
+          this.rows[i] = dates[+row.date]
+        }
+      }
+
+      // .hour の class 再計算のため
+      this.mode = 'a'
+      this.mode = 'none'
+    },
     hourClass(row, h) {
       const modeClass = {
         out: {
@@ -151,8 +171,10 @@ export default {
       }
       this.modes.forEach((mode) => {
         row[mode] && row[mode].forEach((hours) => {
-          if (hours[0] < h && h <= hours[1])
-          current = modeClass[mode]
+          if ((hours[1] === undefined && hours[0] < h && h <= hours[0] + 1)
+            || (hours[1] !== undefined && hours[0] < h && h <= hours[1])) {
+            current = modeClass[mode]
+          }
         })
       })
 
@@ -165,19 +187,27 @@ export default {
     initSlider(count) {
       this.timeslider.noUiSlider && this.timeslider.noUiSlider.destroy()
 
-      const connect = [false]
-      const start = []
-      for (let i = 0; i < count; i++) {
-        start.push(Math.floor(i * 2 * 24 / (count * 2)))
-        start.push(Math.floor((i * 2 + 1) * 24 / (count * 2)))
-        connect.push(true)
-        connect.push(false)
+      let connect
+      let start
+      if (count === 0.5) {
+        connect = [false, false]
+        start = [12]
+      } else {
+        connect = [false]
+        start = []
+        for (let i = 0; i < count; i++) {
+          start.push(Math.floor(i * 2 * 24 / (count * 2)))
+          start.push(Math.floor((i * 2 + 1) * 24 / (count * 2)))
+          connect.push(true)
+          connect.push(false)
+        }
       }
 
       noUiSlider.create(this.timeslider, {
        start: start,
        connect: connect,
        step: 1,
+       behaviour: "tap",
        orientation: 'horizontal', // 'horizontal' or 'vertical'
        range: {
          'min': 0,
@@ -212,27 +242,29 @@ export default {
     selectHours(row) {
       this.currentRow = row
 
-      if (this.mode === 'none') {
-      } else if (this.mode === 'medicine') {
-        this.timepicker.open()
-      } else {
+      if (this.mode !== 'none') {
         this.sliderModal.open()
       }
     },
     onCompleteSelectHours() {
       const val = this.timeslider.noUiSlider.get()
-
       this.currentRow[this.mode] = []
-      while (val.length > 1) {
-        this.currentRow[this.mode].push([val.shift(), val.shift()])
+      if (typeof val === 'number') {
+        this.currentRow[this.mode].push([val])
+      } else {
+        while (val.length > 0) {
+          this.currentRow[this.mode].push([val.shift(), val.shift()])
+        }
       }
       this.mode = 'none'
     },
     intoEditMode(mode) {
       this.mode = mode
+      this.actionButton.close()
     },
     showMode() {
       const names = {
+        medicine: '眠前薬を飲んだ',
         lie: '眠らずに床についていた',
         deep: 'ぐっすり眠った',
         shallow: 'うとうとしていた',
@@ -258,6 +290,7 @@ export default {
       dropdown.removeClass().addClass("input-field lighten-4").addClass(colors[val])
     },
     load30days(date) {
+      date = date.startOf('day')
       const rows = []
       for (let i = 0; i < 30; i++) {
         const row = {
@@ -359,5 +392,9 @@ export default {
   }
   .hidden {
     display: none;
+  }
+  #timeSlider {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
   }
 </style>
