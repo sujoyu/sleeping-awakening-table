@@ -13,13 +13,19 @@
         <li><a class="btn-floating waves-effect waves-light gray" @click="intoEditMode('none')">戻</a></li>
       </ul>
     </div>
+    <!-- <div v-infinite-scroll="loadMore" :infinite-scroll-disabled="busy" infinite-scroll-distance="10"> -->
     <div class="rhyzm-table">
+
         <transition-group name="rows" tag="ul">
           <li v-for="row in rows" :key="+row.date" class="one-row">
             <rhyzm-table-row :row="row" :currentRow="currentRow" :modes="modes" :mode="mode" @selectHours="onSelectHours"></rhyzm-table-row>
           </li>
         </transition-group>
-        <!-- <infinite-loading @infinite="infiniteHandler"></infinite-loading> -->
+        <!-- <div infinite-wrapper>
+          <div style="overflow: auto;"> -->
+          <!-- </div>
+        </div> -->
+    <!-- </div> -->
     </div>
     <div class="modal" id="sliderModal">
       <div class="modal-content">
@@ -35,12 +41,14 @@
         <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" @click="onCompleteSelectHours">決定</a>
       </div>
     </div>
+    <infinite-loading @infinite="infiniteHandler"></infinite-loading>
   </div>
 </template>
 
 <script type="text/javascript">
 import moment from 'moment'
 import InfiniteLoading from 'vue-infinite-loading'
+// import infiniteScroll from 'vue-infinite-scroll'
 import M from 'materialize-css'
 import noUiSlider from 'nouislider'
 import $ from 'jquery'
@@ -59,7 +67,7 @@ export default {
       sliderModal: null,
       actionButton: null,
       currentRow: {},
-      modes: ['medicine', 'deep', 'shallow', 'lie', 'out'].reverse()
+      modes: ['medicine', 'deep', 'shallow', 'lie', 'out'].reverse(),
     }
   },
   mounted() {
@@ -75,8 +83,6 @@ export default {
 
       this.timeslider = document.getElementById('timeSlider');
       this.initSlider(1)
-
-      this.onLoad()
     })
   },
   updated() {
@@ -85,6 +91,7 @@ export default {
     RhyzmTableRow,
     InfiniteLoading,
   },
+  // directives: {infiniteScroll},
   watch: {
     mode(val) {
       if (this.mode === 'none') {
@@ -222,10 +229,17 @@ export default {
     },
     load30days(date) {
       date = date.startOf('day')
+      const dates = JSON.parse(localStorage.getItem('dates')) || {}
       const rows = []
+
       for (let i = 0; i < 30; i++) {
-        const row = {
-          date: date.clone().subtract(i, 'days')
+        const day = date.clone().subtract(i, 'days')
+        let row
+        if (dates[+day]) {
+          row = dates[+day]
+          row.date = day
+        } else {
+          row = { date: day }
         }
         rows.push(row)
       }
@@ -238,16 +252,17 @@ export default {
 
         for (let i = 0; i < 30; i++) {
           if (i === 29) {
-            setTimeout(() => {
+            // setTimeout(() => {
               this.rows.push(temp[i])
-              $state.loaded()
-            }, 100 * i)
+              this.busy = false;
+            // }, 100 * i)
           } else {
-            setTimeout(() => {
+            // setTimeout(() => {
               this.rows.push(temp[i])
-            }, 100 * i)
+            // }, 100 * i)
           }
         }
+        $state.loaded();
       }, 300)
     },
   },

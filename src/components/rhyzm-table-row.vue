@@ -5,7 +5,7 @@
     <div class="row-item condition">
       <div class="input-field" :class="conditionClass">
       <select v-model="row.condition">
-        <option value="" disabled selected>気分</option>
+        <option value="" disabled selected> 気分</option>
         <option value="2"> 絶好調</option>
         <option value="1"> 好調</option>
         <option value="0"> 普通</option>
