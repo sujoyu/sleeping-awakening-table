@@ -131,7 +131,7 @@ export default {
       console.log(dates)
     },
     onLoad() {
-      const dates = JSON.parse(localStorage.getItem('dates'))
+      const dates = JSON.parse(localStorage.getItem('dates')) || {}
       for (let i = 0; i < this.rows.length; i++) {
         const row = this.rows[i]
         const date = dates[+row.date]
