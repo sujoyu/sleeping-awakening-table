@@ -7,6 +7,18 @@
     </a>
 
       <ul id="slide-out" class="sidenav">
+        <li>
+          <div class="auto-save"><i class="material-icons">save</i>ブラウザに自動保存:
+            <div class="switch">
+              <label>
+                Off
+                <input type="checkbox" v-model="autoSave">
+                <span class="lever"></span>
+                On
+              </label>
+            </div>
+          </div>
+        </li>
         <li><a href="#!" @click="onSave"><i class="material-icons">save</i>ブラウザに保存</a></li>
         <li><a href="#!" @click="onLoad"><i class="material-icons">unarchive</i>ブラウザから復元</a></li>
         <li>
@@ -48,7 +60,7 @@
   <div class="container">
     <div class="section">
       <div class="row">
-          <rhyzm-table ref="mainTable"></rhyzm-table>
+          <rhyzm-table ref="mainTable" :autoSave="autoSave"></rhyzm-table>
       </div>
     </div>
   </div>
@@ -62,6 +74,7 @@
     data() {
       return {
         sidenav: null,
+        autoSave: true,
       }
     },
     mounted() {
@@ -106,6 +119,29 @@
 
   #pageFooter {
     line-height: 23px;
+  }
+
+  .auto-save {
+    color: rgba(0, 0, 0, 0.87);
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    height: 108px;
+    line-height: 60px;
+    padding: 0 32px;
+    i {
+      float: left;
+      height: 48px;
+      line-height: 48px;
+      margin: 0 32px 0 0;
+      width: 24px;
+      color: rgba(0, 0, 0, 0.54);
+    }
+    .switch {
+      text-align: right;
+      margin-top: -10px;
+      line-height: 48px;
+    }
   }
 </style>
 

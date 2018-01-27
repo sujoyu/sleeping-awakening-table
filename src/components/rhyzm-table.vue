@@ -58,6 +58,7 @@ import RhyzmTableRow from './rhyzm-table-row'
 moment.locale('ja');
 
 export default {
+  props: ['autoSave'],
   data() {
     return {
       rows: [],
@@ -99,6 +100,11 @@ export default {
         this.initSlider(0.5)
       } else {
         this.initSlider(1)
+      }
+    },
+    rows() {
+      if (this.autoSave) {
+        this.onSave()
       }
     },
   },
