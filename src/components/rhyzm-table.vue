@@ -5,12 +5,12 @@
         <i class="large material-icons">mode_edit</i>
       </a>
       <ul>
-        <li><a class="btn-floating waves-effect waves-light purple" @click="intoEditMode('out')">外</a></li>
-        <li><a class="btn-floating waves-effect waves-light yellow darken-2" @click="intoEditMode('lie')">床</a></li>
-        <li><a class="btn-floating waves-effect waves-light blue" @click="intoEditMode('shallow')">浅</a></li>
-        <li><a class="btn-floating waves-effect waves-light green" @click="intoEditMode('deep')">深</a></li>
-        <li><a class="btn-floating waves-effect waves-light red" @click="intoEditMode('medicine')">薬</a></li>
-        <li><a class="btn-floating waves-effect waves-light gray" @click="intoEditMode('none')">戻</a></li>
+        <li><a class="btn-floating waves-effect waves-light purple" @click="intoEditMode('out')">外出</a></li>
+        <li><a class="btn-floating waves-effect waves-light yellow darken-2" @click="intoEditMode('lie')">床寝</a></li>
+        <li><a class="btn-floating waves-effect waves-light blue" @click="intoEditMode('shallow')">浅眠</a></li>
+        <li><a class="btn-floating waves-effect waves-light green" @click="intoEditMode('deep')">深眠</a></li>
+        <li><a class="btn-floating waves-effect waves-light red" @click="intoEditMode('medicine')">飲薬</a></li>
+        <li><a class="btn-floating waves-effect waves-light gray" @click="intoEditMode('none')">戻る</a></li>
       </ul>
     </div>
     <!-- <div v-infinite-scroll="loadMore" :infinite-scroll-disabled="busy" infinite-scroll-distance="10"> -->
