@@ -60,7 +60,7 @@
   <div class="container">
     <div class="section">
       <div class="row">
-          <rhyzm-table ref="mainTable" :autoSave="autoSave"></rhyzm-table>
+          <rhyzm-table ref="mainTable" :autoSave="autoSave" @offAutoSave="offAutoSave" @onAutoSave="onAutoSave"></rhyzm-table>
       </div>
     </div>
   </div>
@@ -74,7 +74,7 @@
     data() {
       return {
         sidenav: null,
-        autoSave: true,
+        autoSave: JSON.parse(localStorage.getItem('autoSave')) === false ? false : true,
       }
     },
     mounted() {
@@ -82,6 +82,11 @@
         let elem = document.querySelector('.sidenav');
         this.sidenav = M.Sidenav.init(elem, {});
       })
+    },
+    watch: {
+      autoSave() {
+        localStorage.setItem('autoSave', this.autoSave)
+      }
     },
     components: {
       RhyzmTable
@@ -94,6 +99,12 @@
       onLoad() {
         this.$refs.mainTable.onLoad()
         this.sidenav.close()
+      },
+      onAutoSave() {
+        this.autoSave = true
+      },
+      offAutoSave() {
+        this.autoSave = false
       }
     },
   }

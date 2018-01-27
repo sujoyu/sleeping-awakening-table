@@ -235,6 +235,8 @@ export default {
       return names[this.mode]
     },
     load30days(date) {
+      const prevAutoSave = this.autoSave
+      this.$emit('offAutoSave')
       date = date.startOf('day')
       const dates = JSON.parse(localStorage.getItem('dates')) || {}
       const rows = []
@@ -250,6 +252,11 @@ export default {
         }
         rows.push(row)
       }
+      this.$nextTick(function() {
+        if (prevAutoSave) {
+          this.$emit('onAutoSave')
+        }
+      })
       return rows
     },
     infiniteHandler($state) {
@@ -259,17 +266,16 @@ export default {
 
         for (let i = 0; i < 30; i++) {
           if (i === 29) {
-            // setTimeout(() => {
+            setTimeout(() => {
               this.rows.push(temp[i])
-              this.busy = false;
-            // }, 100 * i)
+              $state.loaded();
+            }, 100 * i)
           } else {
-            // setTimeout(() => {
+            setTimeout(() => {
               this.rows.push(temp[i])
-            // }, 100 * i)
+            }, 100 * i)
           }
         }
-        $state.loaded();
       }, 300)
     },
   },
