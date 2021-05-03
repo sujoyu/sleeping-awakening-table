@@ -4,7 +4,7 @@
     <div class="row-item date">{{ row.date.format('M/D (dd)') }}</div>
     <div class="row-item condition">
       <div class="input-field" :class="conditionClass">
-      <select v-model="row.condition">
+      <select v-model="row.condition"  @change="$emit('change')">
         <option value="" disabled selected> 気分</option>
         <option value="2"> 絶好調</option>
         <option value="1"> 好調</option>
@@ -16,7 +16,7 @@
     </div>
     <div class="row-item comment">
       <div class="input-field">
-        <input placeholder="日常行動" v-model="row.comment">
+        <input placeholder="日常行動" v-model="row.comment" @change="$emit('change')">
       </div>
     </div>
   </div>
@@ -29,6 +29,7 @@
 <script>
   import RhyzmTableRowHour from './rhyzm-table-row-hour'
   import $ from 'jquery'
+  import M from 'materialize-css'
 
   export default {
     props: ['row', 'currentRow', 'modes', 'mode'],
@@ -39,13 +40,13 @@
     mounted() {
       this.$nextTick(function () {
         const elem = $(this.$el).find('select')
-        const instance = M.Select.init(elem, {})
+        const instance = M.FormSelect.init(elem, {})
       })
     },
     updated() {
       this.$nextTick(function () {
         const elem = $(this.$el).find('select')
-        const instance = M.Select.init(elem, {})
+        const instance = M.FormSelect.init(elem, {})
       })
     },
     components: {

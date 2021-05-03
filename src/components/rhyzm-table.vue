@@ -18,7 +18,7 @@
 
         <transition-group name="rows" tag="ul">
           <li v-for="row in rows" :key="+row.date" class="one-row">
-            <rhyzm-table-row :row="row" :currentRow="currentRow" :modes="modes" :mode="mode" @selectHours="onSelectHours"></rhyzm-table-row>
+            <rhyzm-table-row :row="row" :currentRow="currentRow" :modes="modes" :mode="mode" @selectHours="onSelectHours" @change="onAutoSave"></rhyzm-table-row>
           </li>
         </transition-group>
         <!-- <div infinite-wrapper>
@@ -31,10 +31,10 @@
       <div class="modal-content">
         <h4>時間帯選択</h4>
         <p>{{ showMode() }}時間帯を選択してください。<br>
-          <a v-if="mode !== 'medicine'" class="waves-effect waves-light btn" @click="addSlider">時間帯を追加</a><br>
-          <a v-if="mode !== 'medicine'" class="waves-effect waves-light btn orange" @click="removeSlider">時間帯を削除</a>
+          <a class="waves-effect waves-light btn" @click="addSlider">時間帯を追加</a><br>
+          <a class="waves-effect waves-light btn orange" @click="removeSlider">時間帯を削除</a>
         </p>
-        <div id="timeSlider"></div>
+        <div v-show="sliderVisible" id="timeSlider"></div>
       </div>
       <div class="modal-footer">
         <a href="#!" class="modal-action modal-close waves-effect waves-green btn-flat" @click="mode = 'none'; currentRow = null">キャンセル</a>
@@ -48,10 +48,8 @@
 <script type="text/javascript">
 import moment from 'moment'
 import InfiniteLoading from 'vue-infinite-loading'
-// import infiniteScroll from 'vue-infinite-scroll'
 import M from 'materialize-css'
 import noUiSlider from 'nouislider'
-import $ from 'jquery'
 
 import RhyzmTableRow from './rhyzm-table-row'
 
@@ -62,17 +60,19 @@ export default {
   data() {
     return {
       rows: [],
+      dates: [],
       mode: 'none',
       timepicker: null,
       timeslider: null,
       sliderModal: null,
       actionButton: null,
-      currentRow: {},
+      currentRow: null,
+      sliderVisible: false,
       modes: ['medicine', 'deep', 'shallow', 'lie', 'out'].reverse(),
     }
   },
   mounted() {
-    this.rows = this.load30days(moment())
+    this.onLoad()
     this.$nextTick(function () {
       let elem = document.querySelector('.fixed-action-btn');
       this.actionButton = M.FloatingActionButton.init(elem, {
@@ -83,7 +83,7 @@ export default {
       this.sliderModal = M.Modal.init(elem, {});
 
       this.timeslider = document.getElementById('timeSlider');
-      this.initSlider(1)
+      this.initSlider(true, 1)
     })
   },
   updated() {
@@ -92,25 +92,24 @@ export default {
     RhyzmTableRow,
     InfiniteLoading,
   },
-  // directives: {infiniteScroll},
   watch: {
     mode(val) {
       if (this.mode === 'none') {
       } else if (this.mode === 'medicine') {
-        this.initSlider(0.5)
+        this.initSlider(false, 1)
       } else {
-        this.initSlider(1)
-      }
-    },
-    rows() {
-      if (this.autoSave) {
-        this.onSave()
+        this.initSlider(true, 1)
       }
     },
   },
   methods: {
+    onAutoSave() {
+      if (this.autoSave) {
+        this.onSave()
+      }
+    },
     onSave() {
-      const dates = {}
+      const dates = this.dates
       this.rows.forEach((row) => {
         if (Object.keys(row).length > 1) {
           dates[+row.date] = row
@@ -119,15 +118,19 @@ export default {
       localStorage.setItem('dates', JSON.stringify(dates))
     },
     onLoad() {
-      const dates = JSON.parse(localStorage.getItem('dates')) || {}
-      for (let i = 0; i < this.rows.length; i++) {
-        const row = this.rows[i]
-        const date = dates[+row.date]
+      this.dates = JSON.parse(localStorage.getItem('dates')) || {}
+      this.rows = this.load30days(moment())
+    },
+    assignDates(rows) {
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i]
+        const date = this.dates[+row.date]
         if (date) {
           date.date = moment(date.date)
-          this.$set(this.rows, i, dates[+row.date])
+          rows[i] = date
         }
       }
+      return rows
     },
     onSelectHours(row) {
       this.currentRow = row
@@ -143,17 +146,28 @@ export default {
         this.sliderModal.open()
       }
     },
-    initSlider(count) {
+    initSlider(connected, count) {
+      if (count === 0) {
+        this.sliderVisible = false
+        return
+      } else {
+        if (!this.sliderVisible) {
+          count = 1
+        }
+        this.sliderVisible = true
+      }
+
       this.timeslider.noUiSlider && this.timeslider.noUiSlider.destroy()
 
       let connect
-      let start
-      if (count === 0.5) {
-        connect = [false, false]
-        start = [12]
+      let start = []
+      if (!connected) {
+        connect = Array(count + 1).fill(false)
+        for (let i = 0; i < count; i++) {
+          start.push(Math.floor(i * 24 / count))
+        }
       } else {
         connect = [false]
-        start = []
         for (let i = 0; i < count; i++) {
           start.push(Math.floor(i * 2 * 24 / (count * 2)))
           start.push(Math.floor((i * 2 + 1) * 24 / (count * 2)))
@@ -188,15 +202,20 @@ export default {
       });
     },
     addSlider() {
-      const count = (this.timeslider.noUiSlider.options.connect.length - 1) / 2
-      if (count < 24 / 2 - 1) {
-        this.initSlider(count + 1)
+      const connected = this.timeslider.noUiSlider.options.connect.some(b => b)
+      console.log(this.timeslider.noUiSlider.options.connect)
+      const base = connected ? 2 : 1
+      const count = (this.timeslider.noUiSlider.options.connect.length - 1) / base
+      if (count < 24 / base - 1) {
+        this.initSlider(this.timeslider.noUiSlider.options.connect.some(b => b), count + 1)
       }
     },
     removeSlider() {
-      const count = (this.timeslider.noUiSlider.options.connect.length - 1) / 2
-      if (count > 1) {
-        this.initSlider(count - 1)
+      const connected = this.timeslider.noUiSlider.options.connect.some(b => b)
+      const base = connected ? 2 : 1
+      const count = (this.timeslider.noUiSlider.options.connect.length - 1) / base
+      if (count > 0) {
+        this.initSlider(this.timeslider.noUiSlider.options.connect.some(b => b), count - 1)
       }
     },
     onCompleteSelectHours() {
@@ -209,6 +228,8 @@ export default {
           this.currentRow[this.mode].push([val.shift(), val.shift()])
         }
       }
+
+      this.onAutoSave()
 
       this.mode = 'none'
       this.currentRow = null
@@ -238,25 +259,17 @@ export default {
       const prevAutoSave = this.autoSave
       this.$emit('offAutoSave')
       date = date.startOf('day')
-      const dates = JSON.parse(localStorage.getItem('dates')) || {}
-      const rows = []
+      let rows = []
 
       for (let i = 0; i < 30; i++) {
         const day = date.clone().subtract(i, 'days')
-        let row
-        if (dates[+day]) {
-          row = dates[+day]
-          row.date = day
-        } else {
-          row = { date: day }
-        }
-        rows.push(row)
+        rows.push({ date: day })
       }
-      this.$nextTick(function() {
-        if (prevAutoSave) {
-          this.$emit('onAutoSave')
-        }
-      })
+      rows = this.assignDates(rows)
+
+      if (prevAutoSave) {
+        this.$emit('onAutoSave')
+      }
       return rows
     },
     infiniteHandler($state) {

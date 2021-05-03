@@ -36,9 +36,12 @@
       }
       this.modes.forEach((mode) => {
         row[mode] && row[mode].forEach((hours) => {
-          if ((hours[1] === undefined
-              && ((hours[0] < this.hour && this.hour <= hours[0] + 1) || (this.hour === 0 && hours[0] === 24)))
-            || (hours[1] !== undefined && hours[0] < this.hour && this.hour <= hours[1])) {
+          if (mode === 'medicine') {
+            hours = hours.flat()
+            if (hours.indexOf(this.hour - 1) >= 0) {
+              current = modeClass[mode]
+            }
+          } else if (hours[1] !== undefined && hours[0] < this.hour && this.hour <= hours[1]) {
             current = modeClass[mode]
           }
         })
